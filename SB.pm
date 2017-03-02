@@ -765,6 +765,9 @@ sub check_245 {
 			$message[6] =
 			  "Vor Unterfeld \$p muss ein \".\" (Punkt) stehen, wenn es auf ein anderes Unterfeld als \$n folgt.";
 			$message[7] = "\n";
+						
+			$self->warn( join( '', @message ) );
+			
 				} #elsif subfield p preceded by non-period when following a non-subfield 'n'
 			}    #if index is looking at subfield p
 		}    #for
@@ -772,7 +775,7 @@ sub check_245 {
 
 ######################################
 	#check for invalid 2nd indicator
-	$self->_check_article($field);
+	$self->_check_article($field, @message);
 
 }    # check_245
 
@@ -799,41 +802,43 @@ sub _check_article {
 
 	my $self  = shift;
 	my $field = shift;
+	my @message = shift;
 
 	#add articles here as needed
 ##Some omitted due to similarity with valid words (e.g. the German 'die').
 	my %article = (
-		'a'     => 'eng glg hun por',
-		'an'    => 'eng',
-		'das'   => 'ger',
-		'dem'   => 'ger',
-		'der'   => 'ger',
-		'ein'   => 'ger',
-		'eine'  => 'ger',
-		'einem' => 'ger',
-		'einen' => 'ger',
-		'einer' => 'ger',
-		'eines' => 'ger',
-		'el'    => 'spa',
-		'en'    => 'cat dan nor swe',
-		'gl'    => 'ita',
-		'gli'   => 'ita',
-		'il'    => 'ita mlt',
-		'l'     => 'cat fre ita mlt',
-		'la'    => 'cat fre ita spa',
-		'las'   => 'spa',
-		'le'    => 'fre ita',
-		'les'   => 'cat fre',
-		'lo'    => 'ita spa',
-		'los'   => 'spa',
-		'os'    => 'por',
-		'the'   => 'eng',
-		'um'    => 'por',
-		'uma'   => 'por',
-		'un'    => 'cat spa fre ita',
-		'una'   => 'cat spa ita',
-		'une'   => 'fre',
-		'uno'   => 'ita',
+        'a' => 'eng glg hun por',
+        'an' => 'eng',
+        'das' => 'ger',
+        'dem' => 'ger',
+        'der' => 'ger',
+        'die' => 'ger',
+        'ein' => 'ger',
+        'eine' => 'ger',
+        'einem' => 'ger',
+        'einen' => 'ger',
+        'einer' => 'ger',
+        'eines' => 'ger',
+        'el' => 'spa',
+        'en' => 'cat dan nor swe',
+        'gl' => 'ita',
+        'gli' => 'ita',
+        'il' => 'ita mlt',
+        'l' => 'cat fre ita mlt',
+        'la' => 'cat fre ita spa',
+        'las' => 'spa',
+        'le' => 'fre ita',
+        'les' => 'cat fre',
+        'lo' => 'ita spa',
+        'los' => 'spa',
+        'os' => 'por',
+        'the' => 'eng',
+        'um' => 'por',
+        'uma' => 'por',
+        'un' => 'cat spa fre ita',
+        'una' => 'cat spa ita',
+        'une' => 'fre',
+        'uno' => 'ita',
 	);
 
 	#add exceptions here as needed
@@ -886,12 +891,12 @@ sub _check_article {
 	     #130, 630, 730 => ind1
 	elsif ( $tagno =~ /^(?:130|630|730)$/ ) {
 		$ind             = $field->indicator(1);
-		$first_or_second = '1st';
+		$first_or_second = '1.';
 	}    #if field is 130, 630, or 730
 	     #240, 245, 440, 830 => ind2
 	elsif ( $tagno =~ /^(?:240|245|440|830)$/ ) {
 		$ind             = $field->indicator(2);
-		$first_or_second = '2nd';
+		$first_or_second = '2.';
 	}    #if field is 240, 245, 440, or 830
 
 	#report non-numeric non-filing indicators as invalid
@@ -945,22 +950,45 @@ sub _check_article {
 		}    #if separator defined and etc starts with nonfiling chars
 		     #special case for 'en' (unsure why)
 		if ( $firstword eq 'en' ) {
-			$self->warn( $tagno,
-": First word, , $firstword, may be an article, check $first_or_second indicator ($ind)."
-			) unless ( ( $ind eq '3' ) || ( $ind eq '0' ) );
+									$message[1] = "\t";
+			$message[2] = $tagno;
+			$message[3] = "\t";
+			$message[4] = "a";
+			$message[5] = "\t";
+			$message[6] =
+			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			$message[7] = "\n";
+						
+			$self->warn( join( '', @message ) )
+ unless ( ( $ind eq '3' ) || ( $ind eq '0' ) );
 		}
 		elsif ( $nonfilingchars ne $ind ) {
-			$self->warn( $tagno,
-": First word, $firstword, may be an article, check $first_or_second indicator ($ind)."
-			);
+									$message[1] = "\t";
+			$message[2] = $tagno;
+			$message[3] = "\t";
+			$message[4] = "a";
+			$message[5] = "\t";
+			$message[6] =
+			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			$message[7] = "\n";
+			$self->warn( join( '', @message ) );
+			
 		}   #unless ind is same as length of first word and nonfiling characters
 	}    #if first word is in article list
 	     #not an article so warn if $ind is not 0
 	else {
 		unless ( $ind eq '0' ) {
-			$self->warn( $tagno,
-": First word, $firstword, does not appear to be an article, check $first_or_second indicator ($ind)."
-			);
+						$message[1] = "\t";
+			$message[2] = $tagno;
+			$message[3] = "\t";
+			$message[4] = "a";
+			$message[5] = "\t";
+			$message[6] =
+			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			$message[7] = "\n";
+			
+			$self->warn( join( '', @message ) );
+			
 		}    #unless ind is 0
 	}    #else not in article list
 
