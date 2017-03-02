@@ -4,11 +4,9 @@ use strict;
 use warnings;
 use integer;
 
-#use LIB './LintNb';
 use MARC::Record;
 use MARC::Field;
 
-#use MARC::Lint::CodeData; qw(%GeogAreaCodes %ObsoleteGeogAreaCodes %LanguageCodes %ObsoleteLanguageCodes);
 
 our $VERSION = 1.50;
 
