@@ -3,10 +3,10 @@ package SB;
 use strict;
 use warnings;
 use integer;
+use utf8;
 
 use MARC::Record;
 use MARC::Field;
-
 
 our $VERSION = 1.50;
 
@@ -79,7 +79,8 @@ sub check_record {
 	$self->clear_warnings();
 
 	( ( ref $marc ) && $marc->isa('MARC::Record') )
-	  or return $self->warn("Must pass a MARC::Record object to check_record");
+	  or return $self->warn(
+		"\t\t\t\t\t\tMust pass a MARC::Record object to check_record.\n");
 
 	my $bib_id = substr( $marc->field("001")->as_string(), 4, 9 );
 	my @message = ();
@@ -149,7 +150,7 @@ sub check_record {
 				$message[4] = $code;
 				my $rule = $tagrules->{$code};
 				if ( not defined $rule ) {
-					$message[6] = "Unterfeld \"$code\" ist nicht erlaubt.";
+					$message[6] = "Unterfeld \$$code ist nicht erlaubt.";
 					$self->warn( join( '', @message ) );
 				}
 				elsif ( ( $rule eq "NR" ) && $sub_seen{$code} ) {
@@ -158,9 +159,9 @@ sub check_record {
 				}
 
 				if ( $data =~ /[\t\r\n]/ ) {
-					$self->warn(
-"$tagno: Subfield _$code has an invalid control character"
-					);
+					$message[6] =
+"Unterfeld \$$code enthält ein ungültiges Kontrollzeichen (Tabulator, Zeichenumbruch).";
+					$self->warn( join( '', @message ) );
 				}
 
 				++$sub_seen{$code};
@@ -171,16 +172,17 @@ sub check_record {
 
 			#check for subfield characters
 			if ( $field->data() =~ /\x1F/ ) {
-				$self->warn(
-					"$tagno: Subfields are not allowed in fields lower than 010"
-				);
+				$message[6] =
+				  "Unterfelder sind in Feldern kleiner als 010 nicht erlaubt.";
+				$self->warn( join( '', @message ) );
+
 			}    #if control field has subfield delimiter
 		}    #elsif $tagno < 10
 
 # Check to see if a check_xxx() function exists, and call it on the field if it does
 		my $checker = "check_$tagno";
 		if ( $self->can($checker) ) {
-			$self->$checker($field, @message);
+			$self->$checker( $field, @message );
 		}
 
 		if ($is_880) {
@@ -217,8 +219,9 @@ sub check_020 {
 
 	use Business::ISBN;
 
-	my $self  = shift;
-	my $field = shift;
+	my $self    = shift;
+	my $field   = shift;
+	my @message = shift;
 
 ###################################################
 
@@ -240,20 +243,46 @@ sub check_020 {
 		#and the first 10 or 13 characters are not a match for $isbnno
 		if ( $code eq 'a' ) {
 			if ( ( substr( $data, 0, length($isbnno) ) ne $isbnno ) ) {
-				$self->warn("020: Subfield a may have invalid characters.");
+				$message[1] = "\t";
+				$message[2] = "020";
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] =
+"Unterfeld \$$code  (\"$data\") enthält möglicherweise ungültige Zeichen.";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
+
 			}    #if first characters don't match
 
 			#report error if no space precedes a qualifier in subfield a
 			if ( $data =~ /\(/ ) {
-				$self->warn(
-"020: Subfield a qualifier must be preceded by space, $data."
-				) unless ( $data =~ /[X0-9] \(/ );
+				$message[2] = "020";
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] =
+"Subfield \$$code  (\"$data\") qualifier must be preceded by space.";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) )
+				  unless ( $data =~ /[X0-9] \(/ );
 			}    #if data has parenthetical qualifier
 
 	#report error if unable to find 10-13 digit string of digits in subfield 'a'
 			if ( ( $isbnno !~ /(?:^\d{10}$)|(?:^\d{13}$)|(?:^\d{9}X$)/ ) ) {
-				$self->warn(
-					"020: Subfield a has the wrong number of digits, $data.");
+				$message[1] = "\t";
+				$message[2] = "020";
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] =
+"Unterfeld \$$code  (\"$data\") enthält eine ungültige Anzahl Zeichen.";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
+
 			}    # if subfield 'a' but not 10 or 13 digit isbn
 			     #otherwise, check 10 and 13 digit checksums for validity
 			else {
@@ -262,18 +291,36 @@ sub check_020 {
 					if (   ( $Business::ISBN::VERSION gt '2.02_01' )
 						|| ( $Business::ISBN::VERSION gt '2.009' ) )
 					{
-						$self->warn("020: Subfield a has bad checksum, $data.")
+						$message[1] = "\t";
+						$message[2] = "020";
+						$message[3] = "\t";
+						$message[4] = $code;
+						$message[5] = "\t";
+						$message[6] =
+"Unterfeld \$$code  (\"$data\") hat eine ungültige Kontrollziffer (10 Stellen).";
+						$message[7] = "\n";
+
+						$self->warn( join( '', @message ) )
 						  if (
 							Business::ISBN::valid_isbn_checksum($isbnno) != 1 );
 					}    #if Business::ISBN version higher than 2.02_01 or 2.009
 					elsif ( $Business::ISBN::VERSION lt '2' ) {
-						$self->warn("020: Subfield a has bad checksum, $data.")
+						$message[1] = "\t";
+						$message[2] = "020";
+						$message[3] = "\t";
+						$message[4] = $code;
+						$message[5] = "\t";
+						$message[6] =
+"Unterfeld \$$code  (\"$data\") hat eine ungültige Kontrollziffer (10 Stellen).";
+						$message[7] = "\n";
+
+						$self->warn( join( '', @message ) )
 						  if (
 							Business::ISBN::is_valid_checksum($isbnno) != 1 );
 					}    #elsif Business::ISBN version lower than 2
 					else {
 						$self->warn(
-"Business::ISBN version must be below 2 or above 2.02_02 or 2.009."
+"020\t\t\t\t\tBusiness::ISBN version must be below 2 or above 2.02_02 or 2.009.\n"
 						);
 					}    #else Business::ISBN version between 2 and 2.02_02
 				}    #if 10 digit ISBN has invalid check digit
@@ -285,8 +332,17 @@ sub check_020 {
 
 				   #change line below once Business::ISBN handles 13-digit ISBNs
 					my $is_valid_13 = _isbn13_check_digit($isbnno);
-					$self->warn(
-						"020: Subfield a has bad checksum (13 digit), $data.")
+					$message[1] = "\t";
+					$message[2] = "020";
+					$message[3] = "\t";
+					$message[4] = $code;
+					$message[5] = "\t";
+					$message[6] =
+"Unterfeld \$$code  (\"$data\") hat eine ungültige Kontrollziffer (13 Stellen).";
+					$message[7] = "\n";
+
+					$self->warn( join( '', @message ) )
+
 					  unless ( $is_valid_13 == 1 );
 				}    #elsif 13 digit ISBN has invalid check digit
 ###################################################
@@ -298,9 +354,9 @@ sub check_020 {
 ##################################################
 ## Turned on for now--Comment to unimplement ####
 ##################################################
-				$self->warn("020:  Subfield z is numerically valid.")
-				  if ( ( length($isbnno) == 10 )
-					&& ( Business::ISBN::is_valid_checksum($isbnno) == 1 ) );
+				#				$self->warn("020:  Subfield z is numerically valid.")
+				#				  if ( ( length($isbnno) == 10 )
+				#					&& ( Business::ISBN::is_valid_checksum($isbnno) == 1 ) );
 			}    #if 10 digit ISBN has invalid check digit
 		}    #elsif subfield 'z'
 
@@ -355,8 +411,8 @@ MARC::Lint::CodeData data pack to MARC::Lint (%LanguageCodes,
 
 sub check_041 {
 
-	my $self  = shift;
-	my $field = shift;
+	my $self    = shift;
+	my $field   = shift;
 	my @message = shift;
 
 	my %LanguageCodes = map { ( $_, 1 ) } (
@@ -387,15 +443,16 @@ sub check_041 {
 		for ( my $index = 0 ; $index <= $#newsubfields ; $index += 2 ) {
 			if ( length( $newsubfields[ $index + 1 ] ) % 3 != 0 ) {
 
-					$message[1] = "\t";
+				$message[1] = "\t";
 				$message[2] = "041";
-					$message[3] = "\t";
-				$message[4] = $newsubfields[$index+1];
-					$message[5] = "\t";
+				$message[3] = "\t";
+				$message[4] = $newsubfields[$index];
+				$message[5] = "\t";
 				$message[6] =
-"Unterfeld _$newsubfields[$index] muss ohne Rest durch 3 teilbar sein, wenn der 2. Indikator nicht 7 ist, ($newsubfields[$index+1]).";
+"Der Wert des Unterfelds \$$newsubfields[$index] (\"$newsubfields[$index+1]\") muss ohne Rest durch 3 teilbar sein, wenn der 2. Indikator nicht = 7 ist.";
+				$message[7] = "\n";
+
 				$self->warn( join( '', @message ) );
-					$message[7] = "\n";
 
 #				$self->warn(
 #"041: Subfield _$newsubfields[$index] must be evenly divisible by 3 or exactly three characters if ind2 is not 7, ($newsubfields[$index+1])."
@@ -432,14 +489,29 @@ sub check_041 {
 
 						#report invalid matches as possible obsolete codes
 						if ($obsoletelang) {
-							$self->warn(
-"041: Subfield _$newsubfields[$index], $newsubfields[$index+1], may be obsolete."
-							);
+							$message[1] = "\t";
+							$message[2] = "041";
+							$message[3] = "\t";
+							$message[4] = $newsubfields[$index];
+							$message[5] = "\t";
+							$message[6] =
+"Der Wert des Unterfelds \$$newsubfields[$index] (\"$newsubfields[$index+1]\") ist möglicherweise veraltet.";
+							$message[7] = "\n";
+
+							$self->warn( join( '', @message ) );
 						}
 						else {
-							$self->warn(
-"041: Subfield _$newsubfields[$index], $newsubfields[$index+1] ($code041), is not valid."
-							);
+							$message[1] = "\t";
+							$message[2] = "041";
+							$message[3] = "\t";
+							$message[4] = $newsubfields[$index];
+							$message[5] = "\t";
+							$message[6] =
+"Der Wert des Unterfelds \$$newsubfields[$index] (\"$newsubfields[$index+1]\") ist ungültig.";
+							$message[7] = "\n";
+
+							$self->warn( join( '', @message ) );
+
 						}    #else code not found
 					}    # unless found valid code
 				}    #foreach code in 041
@@ -457,74 +529,6 @@ using the MARC::Lint::CodeData data pack to MARC::Lint (%GeogAreaCodes,
 %ObsoleteGeogAreaCodes).
 
 =cut
-
-sub check_043 {
-
-	my $self  = shift;
-	my $field = shift;
-
-	my %GeogAreaCodes = map { ( $_, 1 ) } (
-		split "\t",
-		(
-"a------	a-af---	a-ai---	a-aj---	a-ba---	a-bg---	a-bn---	a-br---	a-bt---	a-bx---	a-cb---	a-cc---	a-cc-an	a-cc-ch	a-cc-cq	a-cc-fu	a-cc-ha	a-cc-he	a-cc-hh	a-cc-hk	a-cc-ho	a-cc-hp	a-cc-hu	a-cc-im	a-cc-ka	a-cc-kc	a-cc-ki	a-cc-kn	a-cc-kr	a-cc-ku	a-cc-kw	a-cc-lp	a-cc-mh	a-cc-nn	a-cc-pe	a-cc-sh	a-cc-sm	a-cc-sp	a-cc-ss	a-cc-su	a-cc-sz	a-cc-ti	a-cc-tn	a-cc-ts	a-cc-yu	a-ccg--	a-cck--	a-ccp--	a-ccs--	a-ccy--	a-ce---	a-ch---	a-cy---	a-em---	a-gs---	a-ii---	a-io---	a-iq---	a-ir---	a-is---	a-ja---	a-jo---	a-kg---	a-kn---	a-ko---	a-kr---	a-ku---	a-kz---	a-le---	a-ls---	a-mk---	a-mp---	a-my---	a-np---	a-nw---	a-ph---	a-pk---	a-pp---	a-qa---	a-si---	a-su---	a-sy---	a-ta---	a-th---	a-tk---	a-ts---	a-tu---	a-uz---	a-vt---	a-ye---	aa-----	ab-----	ac-----	ae-----	af-----	ag-----	ah-----	ai-----	ak-----	am-----	an-----	ao-----	aopf---	aoxp---	ap-----	ar-----	as-----	at-----	au-----	aw-----	awba---	awgz---	ay-----	az-----	b------	c------	cc-----	cl-----	d------	dd-----	e------	e-aa---	e-an---	e-au---	e-be---	e-bn---	e-bu---	e-bw---	e-ci---	e-cs---	e-dk---	e-er---	e-fi---	e-fr---	e-ge---	e-gi---	e-gr---	e-gw---	e-gx---	e-hu---	e-ic---	e-ie---	e-it---	e-kv---	e-lh---	e-li---	e-lu---	e-lv---	e-mc---	e-mm---	e-mo---	e-mv---	e-ne---	e-no---	e-pl---	e-po---	e-rb---	e-rm---	e-ru---	e-sm---	e-sp---	e-sw---	e-sz---	e-uk---	e-uk-en	e-uk-ni	e-uk-st	e-uk-ui	e-uk-wl	e-un---	e-ur---	e-urc--	e-ure--	e-urf--	e-urk--	e-urn--	e-urp--	e-urr--	e-urs--	e-uru--	e-urw--	e-vc---	e-xn---	e-xo---	e-xr---	e-xv---	e-yu---	ea-----	eb-----	ec-----	ed-----	ee-----	el-----	en-----	eo-----	ep-----	er-----	es-----	ev-----	ew-----	f------	f-ae---	f-ao---	f-bd---	f-bs---	f-cd---	f-cf---	f-cg---	f-cm---	f-cx---	f-dm---	f-ea---	f-eg---	f-et---	f-ft---	f-gh---	f-gm---	f-go---	f-gv---	f-iv---	f-ke---	f-lb---	f-lo---	f-ly---	f-mg---	f-ml---	f-mr---	f-mu---	f-mw---	f-mz---	f-ng---	f-nr---	f-pg---	f-rh---	f-rw---	f-sa---	f-sd---	f-sf---	f-sg---	f-sh---	f-sj---	f-sl---	f-so---	f-sq---	f-ss---	f-sx---	f-tg---	f-ti---	f-tz---	f-ua---	f-ug---	f-uv---	f-za---	fa-----	fb-----	fc-----	fd-----	fe-----	ff-----	fg-----	fh-----	fi-----	fl-----	fn-----	fq-----	fr-----	fs-----	fu-----	fv-----	fw-----	fz-----	h------	i------	i-bi---	i-cq---	i-fs---	i-hm---	i-mf---	i-my---	i-re---	i-se---	i-xa---	i-xb---	i-xc---	i-xo---	l------	ln-----	lnaz---	lnbm---	lnca---	lncv---	lnfa---	lnjn---	lnma---	lnsb---	ls-----	lsai---	lsbv---	lsfk---	lstd---	lsxj---	lsxs---	m------	ma-----	mb-----	me-----	mm-----	mr-----	n------	n-cn---	n-cn-ab	n-cn-bc	n-cn-mb	n-cn-nf	n-cn-nk	n-cn-ns	n-cn-nt	n-cn-nu	n-cn-on	n-cn-pi	n-cn-qu	n-cn-sn	n-cn-yk	n-cnh--	n-cnm--	n-cnp--	n-gl---	n-mx---	n-us---	n-us-ak	n-us-al	n-us-ar	n-us-az	n-us-ca	n-us-co	n-us-ct	n-us-dc	n-us-de	n-us-fl	n-us-ga	n-us-hi	n-us-ia	n-us-id	n-us-il	n-us-in	n-us-ks	n-us-ky	n-us-la	n-us-ma	n-us-md	n-us-me	n-us-mi	n-us-mn	n-us-mo	n-us-ms	n-us-mt	n-us-nb	n-us-nc	n-us-nd	n-us-nh	n-us-nj	n-us-nm	n-us-nv	n-us-ny	n-us-oh	n-us-ok	n-us-or	n-us-pa	n-us-ri	n-us-sc	n-us-sd	n-us-tn	n-us-tx	n-us-ut	n-us-va	n-us-vt	n-us-wa	n-us-wi	n-us-wv	n-us-wy	n-usa--	n-usc--	n-use--	n-usl--	n-usm--	n-usn--	n-uso--	n-usp--	n-usr--	n-uss--	n-ust--	n-usu--	n-xl---	nc-----	ncbh---	nccr---	nccz---	nces---	ncgt---	ncho---	ncnq---	ncpn---	nl-----	nm-----	np-----	nr-----	nw-----	nwaq---	nwaw---	nwbb---	nwbf---	nwbn---	nwcj---	nwco---	nwcu---	nwdq---	nwdr---	nweu---	nwgd---	nwgp---	nwhi---	nwht---	nwjm---	nwla---	nwli---	nwmj---	nwmq---	nwna---	nwpr---	nwsc---	nwsd---	nwsn---	nwst---	nwsv---	nwtc---	nwtr---	nwuc---	nwvb---	nwvi---	nwwi---	nwxa---	nwxi---	nwxk---	nwxm---	p------	pn-----	po-----	poas---	pobp---	poci---	pocw---	poea---	pofj---	pofp---	pogg---	pogu---	poji---	pokb---	poki---	poln---	pome---	pomi---	ponl---	ponn---	ponu---	popc---	popl---	pops---	posh---	potl---	poto---	pott---	potv---	poup---	powf---	powk---	pows---	poxd---	poxe---	poxf---	poxh---	ps-----	q------	r------	s------	s-ag---	s-bl---	s-bo---	s-ck---	s-cl---	s-ec---	s-fg---	s-gy---	s-pe---	s-py---	s-sr---	s-uy---	s-ve---	sa-----	sn-----	sp-----	t------	u------	u-ac---	u-at---	u-at-ac	u-at-ne	u-at-no	u-at-qn	u-at-sa	u-at-tm	u-at-vi	u-at-we	u-atc--	u-ate--	u-atn--	u-cs---	u-nz---	w------	x------	xa-----	xb-----	xc-----	xd-----	zd-----	zju----	zma----	zme----	zmo----	zne----	zo-----	zpl----	zs-----	zsa----	zsu----	zur----	zve----"
-		)
-	);
-	my %ObsoleteGeogAreaCodes = map { ( $_, 1 ) } (
-		split "\t",
-		(
-"t-ay---	e-ur-ai	e-ur-aj	nwbc---	e-ur-bw	f-by---	pocp---	e-url--	cr-----	v------	e-ur-er	et-----	e-ur-gs	pogn---	nwga---	nwgs---	a-hk---	ei-----	f-if---	awiy---	awiw---	awiu---	e-ur-kz	e-ur-kg	e-ur-lv	e-ur-li	a-mh---	cm-----	e-ur-mv	n-usw--	a-ok---	a-pt---	e-ur-ru	pory---	nwsb---	posc---	a-sk---	posn---	e-uro--	e-ur-ta	e-ur-tk	e-ur-un	e-ur-uz	a-vn---	a-vs---	nwvr---	e-urv--	a-ys---"
-		)
-	);
-
-	# break subfields into code-data array (so the entire field is in one array)
-
-	my @subfields    = $field->subfields();
-	my @newsubfields = ();
-
-	while ( my $subfield = pop(@subfields) ) {
-		my ( $code, $data ) = @$subfield;
-		unshift( @newsubfields, $code, $data );
-	}    # while
-
-	#warn if length of subfield a is not exactly 7
-	for ( my $index = 0 ; $index <= $#newsubfields ; $index += 2 ) {
-		if (   ( $newsubfields[$index] eq 'a' )
-			&& ( length( $newsubfields[ $index + 1 ] ) != 7 ) )
-		{
-			$self->warn(
-"043: Subfield _a must be exactly 7 characters, $newsubfields[$index+1]"
-			);
-		}    # if suba and length is not 7
-		     #check against code list for geographic areas.
-		elsif ( $newsubfields[$index] eq 'a' ) {
-
-			#see if geog area code matches valid code
-			my $validgac =
-			  $GeogAreaCodes{ $newsubfields[ $index + 1 ] } ? 1 : 0;
-
-			#look for obsolete code match if valid code was not matched
-			my $obsoletegac =
-			  $ObsoleteGeogAreaCodes{ $newsubfields[ $index + 1 ] } ? 1 : 0;
-
-			# skip valid subfields
-			unless ($validgac) {
-
-				#report invalid matches as possible obsolete codes
-				if ($obsoletegac) {
-					$self->warn(
-"043: Subfield _a, $newsubfields[$index+1], may be obsolete."
-					);
-				}
-				else {
-					$self->warn(
-"043: Subfield _a, $newsubfields[$index+1], is not valid."
-					);
-				}    #else code not found
-			}    # unless found valid code
-
-		}    #elsif suba
-	}    #foreach subfield
-}    #check_043
 
 =head2 check_245( $field )
 
@@ -547,14 +551,23 @@ sub check_043 {
 
 sub check_245 {
 
-	my $self  = shift;
-	my $field = shift;
+	my $self    = shift;
+	my $field   = shift;
+	my @message = shift;
 
 	#set tagno for reporting
 	my $tagno = '245';
 
 	if ( not $field->subfield("a") ) {
-		$self->warn("245: Must have a subfield _a.");
+		$message[1] = "\t";
+		$message[2] = "245";
+		$message[3] = "\t";
+		$message[4] = "";
+		$message[5] = "\t";
+		$message[6] = "Kein Unterfeld \$a vorhanden.";
+		$message[7] = "\n";
+
+		$self->warn( join( '', @message ) );
 	}
 
 	# break subfields into code-data array (so the entire field is in one array)
@@ -575,29 +588,37 @@ sub check_245 {
 	#subfield a should be first subfield (or 2nd if subfield '6' is present)
 	if ($has_sub_6) {
 
-		#make sure there are at least 2 subfields
-		if ( $#newsubfields < 3 ) {
-			$self->warn("$tagno: May have too few subfields.");
-		}    #if fewer than 2 subfields
-		else {
-			if ( $newsubfields[0] ne '6' ) {
-				$self->warn(
-"$tagno: First subfield must be _6, but it is $newsubfields[0]"
-				);
-			}    #if 1st subfield not '6'
-			if ( $newsubfields[2] ne 'a' ) {
-				$self->warn(
-"$tagno: First subfield after subfield _6 must be _a, but it is _$newsubfields[2]"
-				);
-			}    #if 2nd subfield not 'a'
-		}    #else at least 2 subfields
+#		#make sure there are at least 2 subfields
+#		if ( $#newsubfields < 3 ) {
+#			$self->warn("$tagno: May have too few subfields.");
+#		}    #if fewer than 2 subfields
+#		else {
+#			if ( $newsubfields[0] ne '6' ) {
+#				$self->warn(
+#"$tagno: First subfield must be _6, but it is $newsubfields[0]"
+#				);
+#			}    #if 1st subfield not '6'
+#			if ( $newsubfields[2] ne 'a' ) {
+#				$self->warn(
+#"$tagno: First subfield after subfield _6 must be _a, but it is _$newsubfields[2]"
+#				);
+#			}    #if 2nd subfield not 'a'
+#		}    #else at least 2 subfields
 	}    #if has subfield 6
 	else {
 		#1st subfield must be 'a'
 		if ( $newsubfields[0] ne 'a' ) {
-			$self->warn(
-				"$tagno: First subfield must be _a, but it is _$newsubfields[0]"
-			);
+			$message[1] = "\t";
+			$message[2] = "245";
+			$message[3] = "\t";
+			$message[4] = "";
+			$message[5] = "\t";
+			$message[6] =
+			  "Das erste Unterfeld muss \$a sein, ist aber \$$newsubfields[0]";
+			$message[7] = "\n";
+
+			$self->warn( join( '', @message ) );
+
 		}    #if 2nd subfield not 'a'
 	}    #else no subfield _6
 	##End check for first subfield
@@ -610,16 +631,26 @@ sub check_245 {
 
 			# 245 subfield c must be preceded by / (space-/)
 			if ( $newsubfields[$index] eq 'c' ) {
-				$self->warn("245: Subfield _c must be preceded by /")
+			$message[1] = "\t";
+			$message[2] = "245";
+			$message[3] = "\t";
+			$message[4] = "";
+			$message[5] = "\t";
+			$message[6] =
+			  "Vor Unterfeld \$c muss ein \"/\" stehen";
+			$message[7] = "\n";
+			
+			$self->warn( join( '', @message ) )
+
 				  if ( $newsubfields[ $index - 1 ] !~ /\s\/$/ );
 
 				# 245 subfield c initials should not have space
-				$self->warn(
-					"245: Subfield _c initials should not have a space.")
-				  if ( ( $newsubfields[ $index + 1 ] =~ /\b\w\. \b\w\./ )
-					&& (
-						$newsubfields[ $index + 1 ] !~ /\[\bi\.e\. \b\w\..*\]/ )
-				  );
+#				$self->warn(
+#					"245: Subfield _c initials should not have a space.")
+#				  if ( ( $newsubfields[ $index + 1 ] =~ /\b\w\. \b\w\./ )
+#					&& (
+#						$newsubfields[ $index + 1 ] !~ /\[\bi\.e\. \b\w\..*\]/ )
+#				  );
 				last;
 			}    #if
 		}    #for
@@ -640,9 +671,16 @@ sub check_245 {
 #            	$message[4] = "b";
 #            	$message[6] = "Vor Unterfeld \"b\" sollte Abstand-Doppelpunkt, Abstand-Strichpunkt oder Abstand-Gleichheitszeichen stehen";
 #            	$self->warn( join('', @message) );
-				$self->warn(
-"245: Subfield _b should be preceded by space-colon, space-semicolon, or space-equals sign."
-				);
+			$message[1] = "\t";
+			$message[2] = "245";
+			$message[3] = "\t";
+			$message[4] = "";
+			$message[5] = "\t";
+			$message[6] =
+			  "Vor Unterfeld \$b sollte ein \" :\", \" ;\" oder ein  \" =\", stehen";
+			$message[7] = "\n";
+			
+			$self->warn( join( '', @message ) );
 			}    #if
 		}    #for
 	}    # subfield b exists
@@ -657,17 +695,17 @@ sub check_245 {
 			if (   ( $newsubfields[$index] eq 'h' )
 				&& ( $newsubfields[ $index - 1 ] !~ /(\S$)|(\-\- $)/ ) )
 			{
-				$self->warn(
-					"245: Subfield _h should not be preceded by space.");
+#				$self->warn(
+#					"245: Subfield _h should not be preceded by space.");
 			}    #if h and not preceded by no-space (unless dash)
 			 #report error if subfield 'h' does not start with open square bracket with a matching close bracket
 			##could have check against list of valid values here
 			if (   ( $newsubfields[$index] eq 'h' )
 				&& ( $newsubfields[ $index + 1 ] !~ /^\[\w*\s*\w*\]/ ) )
 			{
-				$self->warn(
-"245: Subfield _h must have matching square brackets, $newsubfields[$index]."
-				);
+#				$self->warn(
+#"245: Subfield _h must have matching square brackets, $newsubfields[$index]."
+#				);
 			}
 		}    #for
 	}    # subfield h exists
@@ -682,7 +720,7 @@ sub check_245 {
 			if (   ( $newsubfields[$index] eq 'n' )
 				&& ( $newsubfields[ $index - 1 ] !~ /(\S\.$)|(\-\- \.$)/ ) )
 			{
-				$self->warn("245: Subfield _n must be preceded by . (period).");
+#				$self->warn("245: Subfield _n must be preceded by . (period).");
 			}    #if
 		}    #for
 	}    # subfield n exists
@@ -700,6 +738,17 @@ sub check_245 {
 				if (   ( $newsubfields[ $index - 2 ] eq 'n' )
 					&& ( $newsubfields[ $index - 1 ] !~ /(\S,$)|(\-\- ,$)/ ) )
 				{
+								$message[1] = "\t";
+			$message[2] = "245";
+			$message[3] = "\t";
+			$message[4] = "p";
+			$message[5] = "\t";
+			$message[6] =
+			  "Vor Unterfeld \$p muss ein \",\" (Komma) stehen, wenn es auf Unterfeld \$n folgt.";
+			$message[7] = "\n";
+			
+			$self->warn( join( '', @message ) );
+					
 					$self->warn(
 "245: Subfield _p must be preceded by , (comma) when it follows subfield _n."
 					);
@@ -708,9 +757,14 @@ sub check_245 {
 				elsif (( $newsubfields[ $index - 2 ] ne 'n' )
 					&& ( $newsubfields[ $index - 1 ] !~ /(\S\.$)|(\-\- \.$)/ ) )
 				{
-					$self->warn(
-"245: Subfield _p must be preceded by . (period) when it follows a subfield other than _n."
-					);
+			$message[1] = "\t";
+			$message[2] = "245";
+			$message[3] = "\t";
+			$message[4] = "p";
+			$message[5] = "\t";
+			$message[6] =
+			  "Vor Unterfeld \$p muss ein \".\" (Punkt) stehen, wenn es auf ein anderes Unterfeld als \$n folgt.";
+			$message[7] = "\n";
 				} #elsif subfield p preceded by non-period when following a non-subfield 'n'
 			}    #if index is looking at subfield p
 		}    #for
@@ -3076,6 +3130,7 @@ z       R       Geographic subdivision
 4       R       Relator code 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 610     R       SUBJECT ADDED ENTRY--CORPORATE NAME
 ind1    012     Type of corporate name entry element
@@ -3108,6 +3163,7 @@ z       R       Geographic subdivision
 4       R       Relator code 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 611     R       SUBJECT ADDED ENTRY--MEETING NAME
 ind1    012     Type of meeting name entry element
@@ -3138,6 +3194,7 @@ z       R       Geographic subdivision
 4       R       Relator code 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 630     R       SUBJECT ADDED ENTRY--UNIFORM TITLE
 ind1    0-9     Nonfiling characters
@@ -3167,6 +3224,7 @@ z       R       Geographic subdivision
 4       R       Relator code
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 648     R       SUBJECT ADDED ENTRY--CHRONOLOGICAL TERM
 ind1    blank   Undefined
@@ -3181,6 +3239,7 @@ z       R       Geographic subdivision
 3       NR      Materials specified 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 650     R       SUBJECT ADDED ENTRY--TOPICAL TERM
 ind1    b012    Level of subject
@@ -3190,6 +3249,7 @@ b       NR      Topical term following geographic name as entry element
 c       NR      Location of event 
 d       NR      Active dates 
 e       NR      Relator term 
+g       R       Miscellaneous information 
 v       R       Form subdivision 
 x       R       General subdivision 
 y       R       Chronological subdivision 
@@ -3200,12 +3260,14 @@ z       R       Geographic subdivision
 4       R       Relator code
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 651     R       SUBJECT ADDED ENTRY--GEOGRAPHIC NAME
 ind1    blank   Undefined
 ind2    01234567    Thesaurus
 a       NR      Geographic name 
 e       R       Relator term
+g       R       Miscellaneous information 
 v       R       Form subdivision 
 x       R       General subdivision 
 y       R       Chronological subdivision 
@@ -3216,6 +3278,7 @@ z       R       Geographic subdivision
 4       R       Relator code
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 653     R       INDEX TERM--UNCONTROLLED
 ind1    b012    Level of index term
@@ -3257,6 +3320,7 @@ z       R       Geographic subdivision
 5       NR      Institution to which field applies 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 656     R       INDEX TERM--OCCUPATION
 ind1    blank   Undefined
