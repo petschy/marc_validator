@@ -7,12 +7,12 @@ use utf8;
 use SB;
 use MARC::File::USMARC;
 use MARC::Lint::CodeData;
-use MARC::Lint::CodeData qw(%LanguageCodes %ObsoleteLanguageCodes );
+#use MARC::Lint::CodeData qw(%LanguageCodes %ObsoleteLanguageCodes );
 
 my $lint = new 	SB;
 
 
-my $marcfile = "test.mrc";
+my $marcfile = "sb2010.mrc";
 
 # my $marcfile = shift;
 

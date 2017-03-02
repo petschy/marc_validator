@@ -154,7 +154,7 @@ sub check_record {
 					$self->warn( join( '', @message ) );
 				}
 				elsif ( ( $rule eq "NR" ) && $sub_seen{$code} ) {
-					$message[6] = "Unterfeld \"$code\" ist nicht wiederholbar.";
+					$message[6] = "Unterfeld \$$code ist nicht wiederholbar.";
 					$self->warn( join( '', @message ) );
 				}
 
@@ -631,26 +631,25 @@ sub check_245 {
 
 			# 245 subfield c must be preceded by / (space-/)
 			if ( $newsubfields[$index] eq 'c' ) {
-			$message[1] = "\t";
-			$message[2] = "245";
-			$message[3] = "\t";
-			$message[4] = "";
-			$message[5] = "\t";
-			$message[6] =
-			  "Vor Unterfeld \$c muss ein \"/\" stehen";
-			$message[7] = "\n";
-			
-			$self->warn( join( '', @message ) )
+				$message[1] = "\t";
+				$message[2] = "245";
+				$message[3] = "\t";
+				$message[4] = "";
+				$message[5] = "\t";
+				$message[6] = "Vor Unterfeld \$c muss ein \"/\" stehen";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) )
 
 				  if ( $newsubfields[ $index - 1 ] !~ /\s\/$/ );
 
 				# 245 subfield c initials should not have space
-#				$self->warn(
-#					"245: Subfield _c initials should not have a space.")
-#				  if ( ( $newsubfields[ $index + 1 ] =~ /\b\w\. \b\w\./ )
-#					&& (
-#						$newsubfields[ $index + 1 ] !~ /\[\bi\.e\. \b\w\..*\]/ )
-#				  );
+				#				$self->warn(
+				#					"245: Subfield _c initials should not have a space.")
+				#				  if ( ( $newsubfields[ $index + 1 ] =~ /\b\w\. \b\w\./ )
+				#					&& (
+				#						$newsubfields[ $index + 1 ] !~ /\[\bi\.e\. \b\w\..*\]/ )
+				#				  );
 				last;
 			}    #if
 		}    #for
@@ -671,16 +670,16 @@ sub check_245 {
 #            	$message[4] = "b";
 #            	$message[6] = "Vor Unterfeld \"b\" sollte Abstand-Doppelpunkt, Abstand-Strichpunkt oder Abstand-Gleichheitszeichen stehen";
 #            	$self->warn( join('', @message) );
-			$message[1] = "\t";
-			$message[2] = "245";
-			$message[3] = "\t";
-			$message[4] = "";
-			$message[5] = "\t";
-			$message[6] =
-			  "Vor Unterfeld \$b sollte ein \" :\", \" ;\" oder ein  \" =\", stehen";
-			$message[7] = "\n";
-			
-			$self->warn( join( '', @message ) );
+				$message[1] = "\t";
+				$message[2] = "245";
+				$message[3] = "\t";
+				$message[4] = "";
+				$message[5] = "\t";
+				$message[6] =
+"Vor Unterfeld \$b sollte ein \" :\", \" ;\" oder ein  \" =\", stehen";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
 			}    #if
 		}    #for
 	}    # subfield b exists
@@ -695,17 +694,17 @@ sub check_245 {
 			if (   ( $newsubfields[$index] eq 'h' )
 				&& ( $newsubfields[ $index - 1 ] !~ /(\S$)|(\-\- $)/ ) )
 			{
-#				$self->warn(
-#					"245: Subfield _h should not be preceded by space.");
+				#				$self->warn(
+				#					"245: Subfield _h should not be preceded by space.");
 			}    #if h and not preceded by no-space (unless dash)
 			 #report error if subfield 'h' does not start with open square bracket with a matching close bracket
 			##could have check against list of valid values here
 			if (   ( $newsubfields[$index] eq 'h' )
 				&& ( $newsubfields[ $index + 1 ] !~ /^\[\w*\s*\w*\]/ ) )
 			{
-#				$self->warn(
-#"245: Subfield _h must have matching square brackets, $newsubfields[$index]."
-#				);
+  #				$self->warn(
+  #"245: Subfield _h must have matching square brackets, $newsubfields[$index]."
+  #				);
 			}
 		}    #for
 	}    # subfield h exists
@@ -720,7 +719,7 @@ sub check_245 {
 			if (   ( $newsubfields[$index] eq 'n' )
 				&& ( $newsubfields[ $index - 1 ] !~ /(\S\.$)|(\-\- \.$)/ ) )
 			{
-#				$self->warn("245: Subfield _n must be preceded by . (period).");
+		   #				$self->warn("245: Subfield _n must be preceded by . (period).");
 			}    #if
 		}    #for
 	}    # subfield n exists
@@ -738,17 +737,17 @@ sub check_245 {
 				if (   ( $newsubfields[ $index - 2 ] eq 'n' )
 					&& ( $newsubfields[ $index - 1 ] !~ /(\S,$)|(\-\- ,$)/ ) )
 				{
-								$message[1] = "\t";
-			$message[2] = "245";
-			$message[3] = "\t";
-			$message[4] = "p";
-			$message[5] = "\t";
-			$message[6] =
-			  "Vor Unterfeld \$p muss ein \",\" (Komma) stehen, wenn es auf Unterfeld \$n folgt.";
-			$message[7] = "\n";
-			
-			$self->warn( join( '', @message ) );
-					
+					$message[1] = "\t";
+					$message[2] = "245";
+					$message[3] = "\t";
+					$message[4] = "p";
+					$message[5] = "\t";
+					$message[6] =
+"Vor Unterfeld \$p muss ein \",\" (Komma) stehen, wenn es auf Unterfeld \$n folgt.";
+					$message[7] = "\n";
+
+					$self->warn( join( '', @message ) );
+
 					$self->warn(
 "245: Subfield _p must be preceded by , (comma) when it follows subfield _n."
 					);
@@ -757,17 +756,17 @@ sub check_245 {
 				elsif (( $newsubfields[ $index - 2 ] ne 'n' )
 					&& ( $newsubfields[ $index - 1 ] !~ /(\S\.$)|(\-\- \.$)/ ) )
 				{
-			$message[1] = "\t";
-			$message[2] = "245";
-			$message[3] = "\t";
-			$message[4] = "p";
-			$message[5] = "\t";
-			$message[6] =
-			  "Vor Unterfeld \$p muss ein \".\" (Punkt) stehen, wenn es auf ein anderes Unterfeld als \$n folgt.";
-			$message[7] = "\n";
-						
-			$self->warn( join( '', @message ) );
-			
+					$message[1] = "\t";
+					$message[2] = "245";
+					$message[3] = "\t";
+					$message[4] = "p";
+					$message[5] = "\t";
+					$message[6] =
+"Vor Unterfeld \$p muss ein \".\" (Punkt) stehen, wenn es auf ein anderes Unterfeld als \$n folgt.";
+					$message[7] = "\n";
+
+					$self->warn( join( '', @message ) );
+
 				} #elsif subfield p preceded by non-period when following a non-subfield 'n'
 			}    #if index is looking at subfield p
 		}    #for
@@ -775,7 +774,7 @@ sub check_245 {
 
 ######################################
 	#check for invalid 2nd indicator
-	$self->_check_article($field, @message);
+	$self->_check_article( $field, @message );
 
 }    # check_245
 
@@ -800,45 +799,45 @@ another field is passed in.
 
 sub _check_article {
 
-	my $self  = shift;
-	my $field = shift;
+	my $self    = shift;
+	my $field   = shift;
 	my @message = shift;
 
 	#add articles here as needed
 ##Some omitted due to similarity with valid words (e.g. the German 'die').
 	my %article = (
-        'a' => 'eng glg hun por',
-        'an' => 'eng',
-        'das' => 'ger',
-        'dem' => 'ger',
-        'der' => 'ger',
-        'die' => 'ger',
-        'ein' => 'ger',
-        'eine' => 'ger',
-        'einem' => 'ger',
-        'einen' => 'ger',
-        'einer' => 'ger',
-        'eines' => 'ger',
-        'el' => 'spa',
-        'en' => 'cat dan nor swe',
-        'gl' => 'ita',
-        'gli' => 'ita',
-        'il' => 'ita mlt',
-        'l' => 'cat fre ita mlt',
-        'la' => 'cat fre ita spa',
-        'las' => 'spa',
-        'le' => 'fre ita',
-        'les' => 'cat fre',
-        'lo' => 'ita spa',
-        'los' => 'spa',
-        'os' => 'por',
-        'the' => 'eng',
-        'um' => 'por',
-        'uma' => 'por',
-        'un' => 'cat spa fre ita',
-        'una' => 'cat spa ita',
-        'une' => 'fre',
-        'uno' => 'ita',
+		'a'     => 'eng glg hun por',
+		'an'    => 'eng',
+		'das'   => 'ger',
+		'dem'   => 'ger',
+		'der'   => 'ger',
+		'die'   => 'ger',
+		'ein'   => 'ger',
+		'eine'  => 'ger',
+		'einem' => 'ger',
+		'einen' => 'ger',
+		'einer' => 'ger',
+		'eines' => 'ger',
+		'el'    => 'spa',
+		'en'    => 'cat dan nor swe',
+		'gl'    => 'ita',
+		'gli'   => 'ita',
+		'il'    => 'ita mlt',
+		'l'     => 'cat fre ita mlt',
+		'la'    => 'cat fre ita spa',
+		'las'   => 'spa',
+		'le'    => 'fre ita',
+		'les'   => 'cat fre',
+		'lo'    => 'ita spa',
+		'los'   => 'spa',
+		'os'    => 'por',
+		'the'   => 'eng',
+		'um'    => 'por',
+		'uma'   => 'por',
+		'un'    => 'cat spa fre ita',
+		'una'   => 'cat spa ita',
+		'une'   => 'fre',
+		'uno'   => 'ita',
 	);
 
 	#add exceptions here as needed
@@ -859,8 +858,11 @@ sub _check_article {
 		'El Salvador'  => 1,
 		'L is '        => 1,
 		'L-'           => 1,
+		'La Chaux-de'  => 1,
 		'La Salle'     => 1,
 		'Las Vegas'    => 1,
+		'Le Corbusier' => 1,
+		'Le Locle'     => 1,
 		'Lo cual'      => 1,
 		'Lo mein'      => 1,
 		'Lo que'       => 1,
@@ -950,45 +952,45 @@ sub _check_article {
 		}    #if separator defined and etc starts with nonfiling chars
 		     #special case for 'en' (unsure why)
 		if ( $firstword eq 'en' ) {
-									$message[1] = "\t";
+			$message[1] = "\t";
 			$message[2] = $tagno;
 			$message[3] = "\t";
 			$message[4] = "a";
 			$message[5] = "\t";
 			$message[6] =
-			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			  "Den $first_or_second Indikator ($ind) kontrollieren: $title";
 			$message[7] = "\n";
-						
+
 			$self->warn( join( '', @message ) )
- unless ( ( $ind eq '3' ) || ( $ind eq '0' ) );
+			  unless ( ( $ind eq '3' ) || ( $ind eq '0' ) );
 		}
 		elsif ( $nonfilingchars ne $ind ) {
-									$message[1] = "\t";
+			$message[1] = "\t";
 			$message[2] = $tagno;
 			$message[3] = "\t";
 			$message[4] = "a";
 			$message[5] = "\t";
 			$message[6] =
-			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			  "Den $first_or_second Indikator ($ind) kontrollieren: $title";
 			$message[7] = "\n";
 			$self->warn( join( '', @message ) );
-			
+
 		}   #unless ind is same as length of first word and nonfiling characters
 	}    #if first word is in article list
 	     #not an article so warn if $ind is not 0
 	else {
 		unless ( $ind eq '0' ) {
-						$message[1] = "\t";
+			$message[1] = "\t";
 			$message[2] = $tagno;
 			$message[3] = "\t";
 			$message[4] = "a";
 			$message[5] = "\t";
 			$message[6] =
-			   "Den $first_or_second Indikator ($ind) kontrollieren ($title)";
+			  "Den $first_or_second Indikator ($ind) kontrollieren: $title";
 			$message[7] = "\n";
-			
+
 			$self->warn( join( '', @message ) );
-			
+
 		}    #unless ind is 0
 	}    #else not in article list
 
@@ -1144,6 +1146,174 @@ sub _ind_regex {
 	return qr/^[$str]$/;
 }
 
+sub check_993 {
+
+	my $self    = shift;
+	my $field   = shift;
+	my @message = shift;
+
+	my @dewey = (
+		"000",   "004", "010",    "020",   "030",   "050",
+		"060",   "070", "080",    "090",   "100",   "130",
+		"150",   "200", "220",    "230",   "290",   "300",
+		"310",   "320", "330",    "333.7", "340",   "350",
+		"355",   "360", "370",    "380",   "390",   "400",
+		"420",   "430", "440",    "450",   "460",   "470",
+		"480",   "490", "491.8",  "500",   "510",   "520",
+		"530",   "540", "550",    "560",   "570",   "580",
+		"590",   "600", "610",    "620",   "621.3", "624",
+		"630",   "640", "650",    "660",   "670",   "690",
+		"700",   "720", "730",    "740",   "741.5", "750",
+		"760",   "770", "780",    "790",   "791",   "792",
+		"793",   "796", "800",    "820",   "830",   "840",
+		"850",   "860", "870",    "880",   "890",   "891.8",
+		"900",   "910", "914.94", "920",   "930",   "940",
+		"949.4", "950", "960",    "970",   "980",   "990"
+	);
+
+	my @cantons = (
+		"ag", "ai", "ar", "be", "bl", "bs", "fr", "ge", "gl", "gr",
+		"ju", "lu", "ne", "nw", "ow", "sg", "sh", "so", "sz", "tg",
+		"ti", "ur", "vd", "vs", "zg", "zh"
+	);
+
+	#set tagno for reporting
+
+	my $tagno = '993';
+
+	if ( not $field->subfield("a") ) {
+
+		$message[1] = "\t";
+		$message[2] = $tagno;
+		$message[3] = "\t";
+		$message[4] = "a";
+		$message[5] = "\t";
+		$message[6] = "Unterfeld \$a muss vorhanden sein.";
+		$message[7] = "\n";
+
+		$self->warn( join( '', @message ) );
+
+	}
+
+	if ( not $field->subfield("b") ) {
+
+		$message[1] = "\t";
+		$message[2] = $tagno;
+		$message[3] = "\t";
+		$message[4] = "b";
+		$message[5] = "\t";
+		$message[6] = "Unterfeld \$b muss vorhanden sein.";
+		$message[7] = "\n";
+
+		$self->warn( join( '', @message ) );
+
+	}
+
+	if ( not $field->subfield("c") ) {
+
+		$message[1] = "\t";
+		$message[2] = $tagno;
+		$message[3] = "\t";
+		$message[4] = "c";
+		$message[5] = "\t";
+		$message[6] = "Unterfeld \$c muss vorhanden sein.";
+		$message[7] = "\n";
+
+		$self->warn( join( '', @message ) );
+
+	}
+
+	# break subfields into code-data array (so the entire field is in one array)
+
+	my @subfields    = $field->subfields();
+	my @newsubfields = ();
+	my $sb16         = 0;
+
+	while ( my $subfield = pop(@subfields) ) {
+		my ( $code, $data ) = @$subfield;
+
+		if ( $code eq 'b' ) {
+			if ( $data =~ /16$/ ) {
+				$sb16 = 1;
+			}
+		}
+
+		if ( $code eq 'c' ) {
+			if ( !grep( /^$data$/, @dewey ) && $sb16 == 1 ) {
+				$message[1] = "\t";
+				$message[2] = $tagno;
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] = "Ungültige Sachgruppe: $data";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
+			}
+		}
+
+		if ( $code eq 'k' ) {
+			if ( !grep( /^$data$/, @cantons ) ) {
+				$message[1] = "\t";
+				$message[2] = $tagno;
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] = "Ungültiges Kantonskürzel: $data";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
+			}
+		}
+
+		unshift( @newsubfields, $code, $data );
+	}    # while
+
+	for ( my $index = 0 ; $index <= $#newsubfields ; $index += 2 ) {
+		if ( $newsubfields[ $index + 1 ] eq 'c' ) {
+			print "OK";
+		}
+	}    #end for
+
+	my $has_sub_c = 0;
+
+	while ( my $subfield = pop(@subfields) ) {
+
+		my ( $code, $data ) = @$subfield;
+
+		if ( $code eq 'c' ) {
+			print "$data\n";
+			if ( grep( /^$data$/, @dewey ) ) {
+
+				print "Gefunden: $code\t$data\n";
+
+			}
+
+		}
+
+		$has_sub_c = 1 if ( $code eq 'c' );
+
+		if ( $has_sub_c == 1 && $code eq "c" ) {
+
+			if ( !grep( /^$data$/, @dewey ) ) {
+
+				print "Gefunden: $code\t$data\n";
+
+			}
+
+			else {
+
+				$self->warn("Feld 993 muss ein Unterfeld _$code haben.");
+
+			}
+
+		}
+
+		$has_sub_c = 0;
+
+	}    # while
+
+}
 1;
 
 __DATA__
@@ -1248,6 +1418,7 @@ q       R       Qualifying information
 z       R       Canceled/invalid ISBN 
 6       NR      Linkage 
 8       R       Field link and sequence number 
+9       R       Lokales Feld
 
 022     R       INTERNATIONAL STANDARD SERIAL NUMBER
 ind1    b01     Level of international interest
@@ -4268,3 +4439,13 @@ ind1    blank   Undefined
 ind2    blank   Undefined
 a       NR      Content of non-MARC field
 2       NR      Source of data
+
+993     R       AUSWAHLCODE FÜR DAS SCHWEIZER BUCH
+ind1    blank   Undefined
+ind2    blank   Undefined
+a       NR      Code des Produkts
+b       NR      Jahrgang und Heftnummer
+c       R       Klassifikation
+d       NR      Spezifische Benmerkung
+k       R       Kantonscode
+
