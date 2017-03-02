@@ -1,2 +1,5 @@
 *.mrc
 warnings.txt
+*.ods
+".xlsx
+*lock.*
