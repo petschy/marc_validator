@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use utf8;
+use feature 'say';
 
 use SB;
 use MARC::File::USMARC;
@@ -12,7 +13,7 @@ use MARC::Lint::CodeData;
 my $lint = new 	SB;
 
 
-my $marcfile = "sb2010.mrc";
+my $marcfile = "264.mrc";
 
 # my $marcfile = shift;
 

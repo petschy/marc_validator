@@ -5,6 +5,8 @@ use warnings;
 use integer;
 use utf8;
 
+use feature 'say';
+
 use MARC::Record;
 use MARC::Field;
 
@@ -902,7 +904,17 @@ sub _check_article {
 	}    #if field is 240, 245, 440, or 830
 
 	#report non-numeric non-filing indicators as invalid
-	$self->warn( $tagno, ": Non-filing indicator is non-numeric" )
+	#my @message = ();
+	$message[1] = "\t";
+	$message[2] = $tagno;
+	$message[3] = "\t";
+	$message[4] = $ind;
+	$message[5] = "\t";
+	$message[6] =
+	  "Der $first_or_second Indikator muss numerisch sein, ist aber \"$ind\".";
+	$message[7] = "\n";
+
+	$self->warn( join( '', @message ) )
 	  unless ( $ind =~ /^[0-9]$/ );
 
 	#get subfield 'a' of the title field
@@ -1128,14 +1140,14 @@ sub _parse_tag_rules {
 sub _nice_list {
 	my $str = shift;
 
-	if ( $str =~ s/(\d)-(\d)/$1 thru $2/ ) {
+	if ( $str =~ s/(\d)-(\d)/$1 bis $2/ ) {
 		return $str;
 	}
 
 	my @digits = split( //, $str );
 	$digits[0] = "blank" if $digits[0] eq "b";
 	my $last = pop @digits;
-	return join( ", ", @digits ) . " or $last";
+	return join( ", ", @digits ) . " oder $last";
 }
 
 sub _ind_regex {
@@ -1144,6 +1156,37 @@ sub _ind_regex {
 	return qr/^ $/ if $str eq "blank";
 
 	return qr/^[$str]$/;
+}
+
+sub check_264 {
+	my $self    = shift;
+	my $field   = shift;
+	my @message = shift;
+
+	if ( $field->indicator(2) eq '4' ) {
+
+		my @subfields    = $field->subfields();
+		my @newsubfields = ();
+
+		while ( my $subfield = pop(@subfields) ) {
+			my ( $code, $data ) = @$subfield;
+
+			unless ( $code eq 'c' ) {
+				$message[1] = "\t";
+				$message[2] = "264";
+				$message[3] = "\t";
+				$message[4] = $code;
+				$message[5] = "\t";
+				$message[6] =
+"Nur Unterfeld \$c erlaubt, aber Unterfeld \$$code vorhanden.";
+				$message[7] = "\n";
+
+				$self->warn( join( '', @message ) );
+			}
+			unshift( @newsubfields, $code, $data );
+		}    #while
+
+	}
 }
 
 sub check_993 {
